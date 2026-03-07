@@ -107,7 +107,7 @@ Keine Polynome, keine RPM-Berechnung — nur Tabellenzugriff.
                                       │
                                       ▼
                 ┌─────────────────────────────────────────────┐
-                │  tabInterp(throttle, MOTOR_TAB_SCHUB)     │
+                │  tabInterp(throttle, MOTOR_TAB_SCHUB)       │
                 │                                             │
                 │  idx = throttle × 100   (O(1), kein Scan)   │
                 │  lo = floor(idx),  hi = lo + 1              │
