@@ -24,7 +24,7 @@ Das Datenblatt liefert **11 Messpunkte** bei ~16V (4S LiPo), Umgebungstemperatur
 | 95      | 39 376 | 340,24    | 15,68        | 16,24     |
 | 100     | 40 053 | 344,73    | 15,64        | 17,54     |
 
-**Einschränkung:** Messungen nur im Bereich 50–100 % Gas. Die Tabelle wird durch einen erzwungenen Nullpunkt (0 %, 0 RPM, 0 A, 0 g Schub) ergänzt. Daraus werden **101 gleichmäßig verteilte Punkte** generiert (Schritt 0,01). Für eine 250-g-Drohne liegt der Schwebeflug-Gaspunkt bei ~18,4 % — dieser Bereich ist durch Extrapolation abgedeckt, aber nicht direkt gemessen.
+**Einschränkung:** Messungen nur im Bereich 50–100 % Gas. Die Tabelle wird durch einen erzwungenen Nullpunkt (0 %, 0 RPM, 0 A, 0 g Schub) ergänzt. Daraus werden **101 gleichmäßig verteilte Punkte** generiert (Schritt 0,01). Für eine 250-g-Drohne liegt der Schwebeflug-Gaspunkt bei ~18,5 % — dieser Bereich ist durch Extrapolation abgedeckt, aber nicht direkt gemessen.
 
 ---
 
@@ -38,9 +38,9 @@ Aus den 12 Punkten (11 Standtest-Werte + erzwungener Nullpunkt) werden drei **Po
 
 | Eingabe | Ausgabe | Octave-Aufruf |
 |---------|---------|---------------|
-| RPM | Schub [g] | `p_schub = polyfit(drehzahl_norm, schub_g, 2)` |
+| RPM | Schub [g] | `p_schub = polyfit(drehzahl_upm, schub_g, 2)` |
 | Gas [0..1] | RPM | `p_rpm_fit = polyfit(gas_pct/100, drehzahl_norm, 2)` |
-| Gas [0..1] | Strom [A] @ 16V | `strom_a_norm = strom_a .* (hover_v_nominal ./ spannung_v).^2` dann `p_strom = polyfit(gas_pct/100, strom_a_norm, 2)` |
+| Gas [0..1] | Strom [A] @ 16V | `strom_a_norm = strom_a .* (V_nom ./ V_mess).²`; `strom_a_norm(1) = MOTOR_I_IDLE` (Leerlaufstrom nicht V²-skaliert); dann `p_strom = polyfit(gas_pct/100, strom_a_norm, 2)` |
 
 Ergebnis für RPM→Schub:
 
@@ -50,7 +50,7 @@ Ergebnis für RPM→Schub:
 |$B$|$4{,}63501621 \times 10^{-3}$|
 |$C$|$-8{,}33299713 \times 10^{-1}$|
 
-**Mittlerer Fehler:** 0,904 g bei maximalem Schub 344,73 g → **3,2 %**
+**Mittlerer Fehler:** 4,2 g im Messbereich (50–100 %) → **1,7 % relativ**. Gesamtmodell-Genauigkeit (mit Spannungsskalierung): **2,1 %** (50/75/100 %).
 
 Da der erzwungene Nullpunkt eingeschlossen ist, öffnet die Parabel nach oben ($A > 0$). Die rechnerische Nullstelle liegt bei ~−44 785 RPM (negativ, physikalisch bedeutungslos).
 
@@ -70,7 +70,7 @@ curr_lut  = max(MOTOR_I_IDLE, polyval(p_strom, gas_lut));  % MOTOR_TAB_STROM (@ 
 schub_lut = max(0, polyval(p_schub, rpm_lut));              % MOTOR_TAB_SCHUB_N (@ 16V normalisiert)
 ```
 
-`MOTOR_TAB_SCHUB` ist das **zentrale Ergebnis**: fertig berechnete Schubkraft [g] bei Nominalspannung (16 V) für jeden Gaspunkt. Die Zwischengröße RPM wird danach nicht mehr benötigt.
+`MOTOR_TAB_SCHUB_N` ist das **zentrale Ergebnis**: fertig berechnete Schubkraft [N] bei Nominalspannung (16 V) für jeden Gaspunkt. Die Zwischengröße RPM wird danach nicht mehr benötigt.
 
 Lineare Interpolation zwischen benachbarten Punkten erfolgt zur Laufzeit in `motor.cpp`.
 
@@ -92,7 +92,7 @@ $$RPM_{hover} = \frac{-B + \sqrt{B^2 - 4A(C - 62{,}5)}}{2A}$$
 
 Gas beim Schwebeflug:
 
-$$throttle_{hover} = interp1(MOTOR\_TAB\_DREHZAHL,\, MOTOR\_TAB\_GAS,\, RPM_{hover}) \approx 17{,}7\,\%$$
+$$throttle_{hover} = interp1(MOTOR\_TAB\_DREHZAHL,\, MOTOR\_TAB\_GAS,\, RPM_{hover}) \approx 18{,}5\,\%$$
 
 Ergebnis wird als `MOTOR_HOVER_THROTTLE_250G` in `motor_lut.h` exportiert.
 
@@ -107,7 +107,7 @@ Keine Polynome, keine RPM-Berechnung — nur Tabellenzugriff.
                                       │
                                       ▼
                 ┌─────────────────────────────────────────────┐
-                │  tabInterp(throttle, MOTOR_TAB_SCHUB)       │
+                │  tabInterp(throttle, MOTOR_TAB_SCHUB_N)     │
                 │                                             │
                 │  idx = throttle × 100   (O(1), kein Scan)   │
                 │  lo = floor(idx),  hi = lo + 1              │
