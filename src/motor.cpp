@@ -17,7 +17,7 @@
 
 #include "motor.h"
 #include <algorithm>
-#include "../includes/motor_lut.h"
+#include "motor_lut.h"
 
 namespace {
     // O(1)-Interpolation in einer gleichmäßigen Tabelle (GAS: 0.0 .. 1.0)
