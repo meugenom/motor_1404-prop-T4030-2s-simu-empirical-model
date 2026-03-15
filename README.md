@@ -6,7 +6,7 @@ A data-driven C++ motor model for drone flight simulation, built from publicly a
 
 ## 🚧 Work in Progress:
   - v1.0 (current): static LUT from datasheet stand test - no dynamics, no temperature effects, no motor-to-motor variation.
---
+---
 
 ## Iteration Roadmap and publishing plan
 
@@ -18,7 +18,7 @@ A data-driven C++ motor model for drone flight simulation, built from publicly a
 
 > v1.0 is a static model based on the datasheet stand test.
 > v2.0 measurements planned on physical test bench.
-> v3.0 measurements planned on a real drone in a controlled environment (tethered test rig).
+> v3.0 measurements planned on a real drone in a controlled environment.
 > Results will be published on [meugenom.com](https://meugenom.com) as open-source data and code.
 
 
@@ -69,10 +69,10 @@ The stand test was conducted at a slightly discharged 4S LiPo: voltage varied fr
 
 ```
 drehzahl_norm = drehzahl_upm × (16.0 / V_measured)
-strom_norm    = strom_meas   × (16.0 / V_measured)²
+strom_norm    = strom_meas   × (16.0 / V_measured)^2
 ```
 
-16.0V was chosen as the nominal reference — close to the actual test conditions (within 0.25V) and a convenient round number for a fresh 4S LiPo (4× 4.0V). The normalisation error is less than 1.5%.
+16.0V was chosen as the nominal reference — close to the actual test conditions (within 0.25V) and a convenient round number for a fresh 4S LiPo (4x4.0V). The normalisation error is less than 1.5%.
 
 **Why RPM normalisation matters for the thrust polynomial:**
 
@@ -115,9 +115,9 @@ $$I[A] = I_{nom}(throttle) \cdot \left(\frac{V}{V_{nom}}\right)^2$$
   ──────────────────            ────────────────────          ──────────────────
   Octave script         ──►     Auto-generated         ──►    C++ runtime
   - RPM normalise               C++ header                    - tabInterp O(1)
-  - polyfit                     (DO NOT EDIT)                 - V² thrust scaling
-  - bake to table                                             - V² current scaling
-  - g→N conversion                                            - no math, no floats
+  - polyfit                     (DO NOT EDIT)                 - V^2 thrust scaling
+  - bake to table                                             - V^2 current scaling
+  - g→N conversion                                            - no polynomials at runtime
   - hover calc
 ```
 
@@ -147,22 +147,22 @@ Expected output (all green):
 ```text
 === Motor Model Tests: F1404 KV4600 ===
 ✓ zero throttle → zero thrust
-✓ thrust at 50%: 1.874N (expected 1.807N)
-✓ thrust at 75%: 2.718N (expected 2.821N)
-✓ thrust at 100%: 3.303N (expected 3.382N)
+✓ thrust at 50%: 1.875N (expected 1.807N)
+✓ thrust at 75%: 2.773N (expected 2.821N)
+✓ thrust at 100%: 3.406N (expected 3.382N)
 ✓ thrust is monotonically increasing
 ✓ lower voltage → lower thrust
-✓ hover 250g quad: throttle=17.7%, total=247.4g (need 250g)
+✓ hover 250g quad: throttle=18.5%, total=247.6g (need 250g)
 
 --- Stromtests (I ∝ V²) ---
-✓ current at 50%: 5.74A (expected 5.23A)
-✓ current at 75%: 11.00A (expected 11.32A)
-✓ current at 100%: 17.85A (expected 17.54A)
+✓ current at 50%: 5.73A (expected 5.23A)
+✓ current at 75%: 11.01A (expected 11.32A)
+✓ current at 100%: 17.84A (expected 17.54A)
 ✓ current is monotonically increasing
 ✓ current V²-scaling: I(16.8V)/I(14.0V) = 1.440 (expected 1.440)
 
 ✓ All tests passed.
-Model accuracy (50/75/100%): 3.7% / 3.7% / 2.3% | avg=3.2%
+Model accuracy (50/75/100%): 3.7% / 1.7% / 0.7% | avg=2.1%
 ```
 ---
 
@@ -207,7 +207,7 @@ The hover point at ~17.7% falls here.
 
 ### Voltage scaling
 
-Both thrust and current use $V^2$ scaling — derived from $\omega \propto V$ (KV law) and the respective quadratic dependence on angular velocity. Valid for ±20% deviation from 16V (i.e., 12.8–19.2V). In practice, the 4S operating range is **14.0–16.8V**.
+Both thrust and current use $V^2$ scaling — derived from $\omega \propto V$ (KV law) and the respective quadratic dependence on angular velocity. Valid for +/-20% deviation from 16V (i.e., 12.8 – 19.2V). In practice, the 4S operating range is **14.0 – 16.8V**.
 
 ---
 
@@ -231,22 +231,22 @@ Both thrust and current use $V^2$ scaling — derived from $\omega \propto V$ (K
 
 | Throttle | Thrust Error | Current Error |
 |----------|-------------|---------------|
-| 50%      | +3.7%       | +9.7%         |
-| 75%      | -3.7%       | -2.8%         |
-| 100%     | -2.3%       | +1.8%         |
-| **avg**  | **3.2%**    | **4.8%**      |
+| 50%      | +3.7%       | +9.6%         |
+| 75%      | -1.7%       | -2.8%         |
+| 100%     | +0.7%       | +1.7%         |
+| **avg**  | **2.1%**    | **4.7%**      |
 
 Tolerance: ±5% thrust, ±10% current.
 
 | Region | Status |
 |---|---|
-| 50–100% throttle, ~16V | Measured data, avg error 3.2% |
+| 50–100% throttle, ~16V | Measured data, avg error 2.1% |
 | 0–49% throttle | Polynomial extrapolation — no measurements |
 | Voltage scaling | Valid for 14.0–16.8V (4S operating range) |
 | Temperature effects | Not modelled |
 | Motor-to-motor variation | Not modelled (~2–3% in practice) |
 
-**Known limitation:** current model less accurate below 60% throttle (+9.7% at 50%).
+**Known limitation:** current model less accurate below 60% throttle (+9.6% at 50%).
 
 ---
 
@@ -260,11 +260,11 @@ Planned for future iterations with real hardware measurements.
 The model assumes instantaneous throttle response.
 In reality the rotor has angular momentum — it cannot change speed instantly.
 
-Time constant τ from motor parameters:
+Time constant $\tau$ from motor parameters:
 
 $$\tau = \frac{J \cdot R}{k_e \cdot k_T}$$
 
-For F1404 geometry (rotor ~6 g, r ≈ 9 mm): τ ≈ 5–15 ms.
+For F1404 geometry (rotor ~6 g, r ≈ 9 mm): $\tau \approx 5–15 \text{ ms}$.
 
 **Impact on simulation:** PID tuned on this model will be optimistic.
 Real step response is slower than predicted.
@@ -305,7 +305,7 @@ Copper winding resistance increases with temperature:
 
 $$R(T) = R_{20°C} \cdot [1 + \alpha \cdot (T - 20°C)]$$
 
-where α = 0.00393 /°C for copper.
+where $ \alpha = 0.00393 /°C$ for copper.
 
 At 60°C operating temperature: R increases ~16%, reducing current and thrust at constant throttle.
 
@@ -313,14 +313,13 @@ At 60°C operating temperature: R increases ~16%, reducing current and thrust at
 
 ## References
 
-1. [T-Motor F1404 KV4600 — Stand Test Data](https://n-factory.de/T-Motor-F1404-4600KV-Ultra-Light-Motor)  
-   Manufacturer datasheet. Primary data source for this model.
+1. [T-Motor F1404 KV4600 — Stand Test Data](https://n-factory.de/T-Motor-F1404-4600KV-Ultra-Light-Motor) Manufacturer datasheet. Primary data source for this model
 
-2. "A Comparative Study on Thrust Map Estimation for Multirotor Aerial Vehicles", Francisco J. Anguita, Rafael Perez-Segui, Carmen DR.Pita-Romero, Miguel Fernandez-Cortizas, Javier Melero-Deza, Pascual Campoy, pages 100-105, 16th INTERNATIONAL MICRO AIR VEHICLE CONFERENCE AND COMPETITION, http://www.imavs.org.
+2. "A Comparative Study on Thrust Map Estimation for Multirotor Aerial Vehicles", Francisco J. Anguita, Rafael Perez-Segui, Carmen DR.Pita-Romero, Miguel Fernandez-Cortizas, Javier Melero-Deza, http://www.imavs.org
 
-3. "Modelling and Control of a Large Quadrotor Robot", P.Pounds, R.Mahony, P.Corke, September 2010, pages 1-26.
+3. "Modelling and Control of a Large Quadrotor Robot", P.Pounds, R.Mahony, P.Corke, 2010
 
-4. Propeller Performance Data at Low Reynolds Numbers, John B. Brandt and Michael S. Selig, AIAA 2011-1255, pages 1-18.
+4. Propeller Performance Data at Low Reynolds Numbers, John B. Brandt and Michael S. Selig 2011, pages 1-18.
 
 ---
 

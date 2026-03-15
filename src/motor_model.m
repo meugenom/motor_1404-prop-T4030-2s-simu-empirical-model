@@ -6,7 +6,7 @@ clear; clc;
 % 1. Standtest-Daten (für Gas 50-100%%, GF3016)
 % =========================================================
 % throttle, Gasstellung [%]
-gas_pct =     [0,50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]';
+gas_pct =     [0, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]';
 % RPM, Drehzahl [U/min]
 drehzahl_upm = [0, 26532, 28299, 30006, 31559, 32770, 34340, 35813, 37190, 38436, 39376, 40053]';
 % Thrust, Schubkraft [g]
@@ -33,10 +33,11 @@ drehzahl_norm = drehzahl_upm .* (hover_v_nominal ./ spannung_v);
 % 2. Regressionsanalyse (Curve Fitting)
 % =========================================================
 % A) Schubmodell: F(n) = A*n^2 + B*n + C
-p_schub = polyfit(drehzahl_norm, schub_g, 2); % 2. Grad Polynom, da F ~ n^2 physikalisch zu erwarten ist
+p_schub = polyfit(drehzahl_upm, schub_g, 2); % F(n) rein aerodynamisch — Messwerte bei echtem RPM verwenden
 
 % B) Strommodell: I(gas) = Ai*g^2 + Bi*g + Ci (gas 0.0 - 1.0)
 strom_a_norm = strom_a .* (hover_v_nominal ./ spannung_v ).^2;
+strom_a_norm(1) = MOTOR_I_IDLE;  % idle current: friction-dominated, not V²-dependent
 p_strom = polyfit(gas_pct/100, strom_a_norm, 2);
 
 % C) Physikalische Schubmodell: F = k*n^2 (durch Ursprung, ohne freiheitsgrad)
@@ -142,22 +143,22 @@ n_real_max = 40053;
 
 % CT aus der Physik (nicht k aus einem Punkt)
 rho = 1.225;
-D_prop = 0.0762;  %CF3016 = 3'' = 76.2mm
+D_prop = 0.0762;  %GF3016 = 3'' = 76.2mm
 r_prop = D_prop / 2;
 A_prop = pi * r_prop^2;
-omega_ds = drehzahl_norm(2:end) * pi / 30;
+omega_ds = drehzahl_upm(2:end) * pi / 30;
 F_ds_N = schub_g(2:end) / 1000 * 9.81;
 CT = mean(F_ds_N ./ (rho * A_prop * r_prop^2 * omega_ds.^2));
 
 n_limit_ideal = 73600; % KV * V = 4600 * 16.0
 gas_sim = linspace(0, 1, 200);
 
-% A) Ideal: RPM linear ot Gas (not sqrt)!, Shub durch CT
+% A) Ideal: RPM linear from Gas, Thrust via CT
 n_ideal_x = linspace(0, n_limit_ideal, 200); % schneidet Linie bei 73.6k RPM
 omega_ideal = n_ideal_x * pi / 30;
 f_ideal_y = CT * rho * A_prop * r_prop^2 * omega_ideal.^2 / 9.81 * 1000;
 
-% B) Real Stand: RPM from Polinome, Shub durch CT
+% B) Real Stand: RPM from polynomial, Thrust via CT
 gas_sim_ext = linspace(0, 1.2, 200);
 n_analyt_x = max(0, polyval(p_rpm_fit, gas_sim_ext));
 n_analyt_x = min(n_analyt_x, 48000);
