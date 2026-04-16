@@ -224,7 +224,7 @@ thrust_model = k_phys * (rpm_line.^2);
 % Plotting
 plot(rpm, thrust_N, 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Real Data');
 hold on;
-plot(rpm_line, thrust_model, 'b-', 'LineWidth', 2, 'DisplayName', sprintf('Physical Model (k=%.2e)', k_phys));
+plot(rpm_line, thrust_model, 'b-', 'LineWidth', 2, 'DisplayName', sprintf('Semi-Empirical Model'));
 
 title('Thrust vs RPM');
 xlabel('RPM [U/min]'); ylabel('Thrust [N]');
