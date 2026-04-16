@@ -6,7 +6,10 @@
 GRAMS_TO_NEWTONS = 9.80665; % from kgf to Newtons
 MOTOR_TAB_SIZE = 101; % 100 steps + null point
 MOTOR_V_NOMINAL = 7.4;
-MOTOR_I_IDLE = 0.11; %from real datasheets not teoreticaly
+SYSTEM_STANDBY_CURRENT = 0.11; % ESC and system standby current at 0 RPM (from test stand data)
+% Note: Actual motor idle current is 0.45A, but for V_eff calculations at throttle=0 we use system standby.
+
+MOTOR_R_INTERNAL = 0.20748; % internal resistance in Ohm (207.48 mOhm from GROUP_SPEC)
 
 
 % 1. Loading Data and remove the first line from csv file
@@ -24,14 +27,13 @@ printf("Strings loaded: %d\n", size(data, 1));
 throttle_us = data(:, 2);
 rpm = data(:, 3);
 thrust_N = data(:, 4) * GRAMS_TO_NEWTONS; % from kgf to Newtons
-torque_Nm = data(:, 5);
 voltage_V = data(:, 6);
 current_A = data(:, 7);
 power_electrical_W = data(:, 8);
-power_mechanical_W = data(:, 9);
-motor_esc_eff = data(:, 10);
-propeller_eff = data(:, 11);
-propulsion_system_eff = data(:, 12);
+% Columns 5 (torque), 9 (mech power), 10-12 (efficiencies) are available in
+% the CSV but not used in this semi-empirical model. Torque would enable a
+% canonical M = K_t·I electromechanical path, but the polynomial approach
+% captures ESC + propeller nonlinearities more robustly for SIL use.
 
 
 % Last point is very noisy (probably due to motor stall), so we will exclude it from the regression
@@ -46,25 +48,63 @@ rpm_filtered = rpm(valid_idx);
 % 3. Normalization
 throttle_norm = (throttle_us - 1000) / 1000;
 
+% 4-5. Iterative V_eff normalization of RPM and current
+%
+% The LUT should represent motor behavior at V_eff_nom(t) = V_nom - I_nom(t)·R_m,
+% where I_nom(t) is the current the motor draws at V_nominal for each throttle.
+% But I_nom(t) depends on the polyfit, which depends on the normalization —
+% a circular dependency. Solved by iterating from a V_terminal bootstrap.
+%
+% V_eff_actual uses measured current (known from the stand test).
+% V_eff_nom uses estimated I_nom from the previous polyfit iteration.
+% After 3 iterations the I_nom estimate converges to <0.1% change.
+
+% Bootstrap: V_terminal normalization (first approximation)
+rpm_norm = rpm .* (MOTOR_V_NOMINAL ./ voltage_V);
+current_norm = SYSTEM_STANDBY_CURRENT + (current_A - SYSTEM_STANDBY_CURRENT) .* (MOTOR_V_NOMINAL ./ voltage_V).^2;
+
+% V_eff at actual conditions (fixed — uses measured current from stand test)
+V_eff_actual = voltage_V - current_A .* MOTOR_R_INTERNAL;
+
+% Iterative refinement to V_eff basis
+for iter = 1:3
+  % Fit current polynomial on current normalization estimate
+  p_cur_tmp = polyfit(throttle_norm_filtered, current_norm(valid_idx), 2);
+
+  % Estimate I_nom(t) at V_nominal for each measurement throttle
+  I_nom_est = max(polyval(p_cur_tmp, throttle_norm), SYSTEM_STANDBY_CURRENT);
+
+  % V_eff at V_nominal with estimated nominal current
+  V_eff_nom = MOTOR_V_NOMINAL - I_nom_est .* MOTOR_R_INTERNAL;
+
+  % Re-normalize RPM and current to V_eff_nom
+  rpm_norm = rpm .* (V_eff_nom ./ V_eff_actual);
+  current_norm = SYSTEM_STANDBY_CURRENT + (current_A - SYSTEM_STANDBY_CURRENT) .* (V_eff_nom ./ V_eff_actual).^2;
+end
+
+rpm_norm_filtered = rpm_norm(valid_idx);
+current_norm_filtered = current_norm(valid_idx);
+
 
 % 6. Generating LUT in 100 steps
 lut_throttle = linspace(0, 1, MOTOR_TAB_SIZE);
 
-% Model RPM the
-p_rpm = polyfit(throttle_norm_filtered, rpm_filtered, 2);
+% Model RPM — fitted on NORMALIZED rpm (at V_nominal)
+p_rpm = polyfit(throttle_norm_filtered, rpm_norm_filtered, 2);
 lut_rpm = polyval(p_rpm, lut_throttle);
 
 % --- Model Thrust (Physical model F = k * n^2) ---
-% First, calculate k using the filtered data (Least Squares through zero)
+% k is a propeller aerodynamic constant — fitted on RAW (unnormalized) data.
+% Both rpm and thrust were measured simultaneously at the same conditions.
 X_phys = rpm_filtered.^2;
 Y_phys = thrust_N_filtered;
 k_phys = sum(X_phys .* Y_phys) / sum(X_phys.^2);
-% Now, calculate thrust in the LUT based on the obtained RPM and physical k
+% Thrust in LUT: k applied to NORMALIZED rpm → gives thrust at V_nominal
 lut_thrust = k_phys * (lut_rpm.^2);
 
 
-% --- Model Current (Polynomial based on filtered data) ---
-p_current = polyfit(throttle_norm_filtered, current_A_filtered, 2);
+% --- Model Current (Polynomial based on NORMALIZED current) ---
+p_current = polyfit(throttle_norm_filtered, current_norm_filtered, 2);
 lut_current = polyval(p_current, lut_throttle);
 
 
@@ -73,12 +113,12 @@ lut_current = polyval(p_current, lut_throttle);
 
 % Secure LUT values to be non-negative
 lut_thrust(lut_thrust < 0) = 0.0;
-lut_current(lut_current < MOTOR_I_IDLE) = MOTOR_I_IDLE;
+lut_current(lut_current < SYSTEM_STANDBY_CURRENT) = SYSTEM_STANDBY_CURRENT;
 lut_rpm(lut_rpm < 0) = 0.0;
 
-% Ensuring the first point (0% throttle) is exactly zero thrust and RPM, and idle current
+% Boundary conditions: zero throttle → zero thrust/RPM, standby current floor
 lut_thrust(1)  = 0.0;
-lut_current(1) = MOTOR_I_IDLE;
+lut_current(1) = SYSTEM_STANDBY_CURRENT;
 lut_rpm(1) = 0.0;
 
 
@@ -96,7 +136,10 @@ fprintf(fid, '// ==========================================');
 fprintf(fid, '#ifndef MOTOR_LUT_H\n#define MOTOR_LUT_H\n\n');
 fprintf(fid, 'static constexpr int MOTOR_TAB_SIZE = %d;\n\n', MOTOR_TAB_SIZE);
 fprintf(fid, 'static constexpr float MOTOR_V_NOMINAL = %.2ff;\n\n', MOTOR_V_NOMINAL);
-fprintf(fid, 'static constexpr float MOTOR_I_IDLE = %.2ff;\n\n', MOTOR_I_IDLE);
+fprintf(fid, "// SYSTEM_STANDBY_CURRENT is the system standby current at 0 RPM (ESC + system),\n");
+fprintf(fid, "// not the motor's mechanical idle current (0.45A at spinning idle).\n");
+fprintf(fid, 'static constexpr float SYSTEM_STANDBY_CURRENT = %.2ff;\n\n', SYSTEM_STANDBY_CURRENT);
+fprintf(fid, 'static constexpr float MOTOR_R_INTERNAL = %.5ff;\n\n', MOTOR_R_INTERNAL);
 
 % --- Generation Tabelle MOTOR_TAB_GAS ---
 fprintf(fid, 'static constexpr float MOTOR_TAB_GAS[] = {\n    ');
