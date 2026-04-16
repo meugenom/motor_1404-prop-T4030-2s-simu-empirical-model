@@ -184,7 +184,7 @@ This overwrites `includes/motor_lut.h` with new precomputed tables. Then rebuild
 Copy `src/motor.cpp`, `includes/motor.h`, `includes/motor_lut.h` into your project, or use CMake:
 
 ```cmake
-add_subdirectory(path/to/tmotor-f1404-model)
+add_subdirectory(path/to/motor_1404-prop-T4030-2s-simu-empirical-model)
 target_link_libraries(your_target PRIVATE motor_model)
 ```
 
