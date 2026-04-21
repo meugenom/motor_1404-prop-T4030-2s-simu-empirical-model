@@ -1,6 +1,6 @@
 // ==========================================
 // AUTO-GENERATED LUT FOR C++ (2S - 7.4V)
-// Generated on: 2026-04-21 18:30:06
+// Generated on: 2026-04-21 21:30:39
 // Motor: BrotherHobby 1404 4600KV
 // Prop: T4030
 // SYSTEM_STANDBY_CURRENT is the system standby current at 0 RPM (ESC + system),
