@@ -280,7 +280,7 @@ lut_rpm(1)     = 0.0;
 Constants:
 - `MOTOR_V_NOMINAL = 7.4V` — nominal 2S voltage
 - `SYSTEM_STANDBY_CURRENT = 0.11A` — ESC/system standby current at 0 RPM (not the motor's mechanical idle at 0.45A)
-- `MOTOR_R_INTERNAL = 0.20748Ω` — internal winding resistance from GROUP_SPEC
+- `MOTOR_R_INTERNAL = 0.20748ohm` — internal winding resistance from GROUP_SPEC
 
 ---
 
