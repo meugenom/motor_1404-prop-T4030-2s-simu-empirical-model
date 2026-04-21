@@ -1,16 +1,27 @@
-// ==========================================// AUTO-GENERATED LUT FOR C++ (2S - 7.4V)// Motor: BrotherHobby 1404 4600KV// Prop: T4030// ==========================================#ifndef MOTOR_LUT_H
+// ==========================================
+// AUTO-GENERATED LUT FOR C++ (2S - 7.4V)
+// Generated on: 2026-04-21 18:30:06
+// Motor: BrotherHobby 1404 4600KV
+// Prop: T4030
+// SYSTEM_STANDBY_CURRENT is the system standby current at 0 RPM (ESC + system),
+// It's not the motor's mechanical idle current (0.45A at spinning idle).
+// ==========================================
+#ifndef MOTOR_LUT_H
 #define MOTOR_LUT_H
 
+// REQ-ALG-002 MOTOR_TAB_SIZE 101 N/A 
 static constexpr int MOTOR_TAB_SIZE = 101;
 
+// REQ-PHY-002 MOTOR_V_NOMINAL 7.4 V 
 static constexpr float MOTOR_V_NOMINAL = 7.40f;
 
-// SYSTEM_STANDBY_CURRENT is the system standby current at 0 RPM (ESC + system),
-// not the motor's mechanical idle current (0.45A at spinning idle).
+// REQ-PHY-003 SYSTEM_STANDBY_CURRENT 0.11 A 
 static constexpr float SYSTEM_STANDBY_CURRENT = 0.11f;
 
+// REQ-PHY-004 MOTOR_R_INTERNAL 0.20748 Ohm 
 static constexpr float MOTOR_R_INTERNAL = 0.20748f;
 
+// REQ-PHY-005
 static constexpr float MOTOR_TAB_GAS[] = {
     0.00f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 
     0.10f, 0.11f, 0.12f, 0.13f, 0.14f, 0.15f, 0.16f, 0.17f, 0.18f, 0.19f, 
@@ -25,6 +36,7 @@ static constexpr float MOTOR_TAB_GAS[] = {
     1.00f
 };
 
+// REQ-PHY-007
 static constexpr float MOTOR_TAB_SCHUB_N[] = {
     0.0000f, 0.0214f, 0.0257f, 0.0304f, 0.0355f, 0.0409f, 0.0466f, 0.0526f, 0.0589f, 0.0656f, 
     0.0725f, 0.0797f, 0.0871f, 0.0949f, 0.1028f, 0.1110f, 0.1195f, 0.1281f, 0.1370f, 0.1460f, 
@@ -39,6 +51,7 @@ static constexpr float MOTOR_TAB_SCHUB_N[] = {
     0.8937f
 };
 
+// REQ-PHY-009
 static constexpr float MOTOR_TAB_STROM[] = {
     0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 
     0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1100f, 0.1628f, 0.2677f, 0.3726f, 0.4775f, 0.5823f, 
@@ -53,6 +66,7 @@ static constexpr float MOTOR_TAB_STROM[] = {
     8.9187f
 };
 
+// REQ-PHY-006
 static constexpr float MOTOR_TAB_DREHZAHL[] = {
     0.0000f, 3611.5479f, 3961.3429f, 4308.0680f, 4651.7230f, 4992.3080f, 5329.8229f, 5664.2678f, 5995.6427f, 6323.9476f, 
     6649.1825f, 6971.3473f, 7290.4421f, 7606.4669f, 7919.4216f, 8229.3063f, 8536.1210f, 8839.8657f, 9140.5403f, 9438.1449f, 
@@ -67,3 +81,5 @@ static constexpr float MOTOR_TAB_DREHZAHL[] = {
     23348.5607f
 };
 
+
+#endif // MOTOR_LUT_H
