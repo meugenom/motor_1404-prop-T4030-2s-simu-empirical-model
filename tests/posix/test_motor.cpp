@@ -17,7 +17,7 @@ bool approxEqual(float actual, float expected, float tol) {
 
 static void check(bool ok, const char* expr, const char* file, int line) {
     if (!ok) {
-        printf("FAIL: %s\n  → %s:%d\n", expr, file, line);
+        printf("[VERIFIED]| - FAIL: %s\n  -> %s:%d\n", expr, file, line);
         exit(1);
     }
 }
@@ -29,7 +29,7 @@ static void check(bool ok, const char* expr, const char* file, int line) {
 void test_zero_throttle() {
     float thrust = getMotorThrustNewtons(0.0f, MOTOR_V_NOMINAL);
     CHECK(thrust == 0.0f);
-    printf("OK zero throttle → zero thrust\n");
+    printf("[VERIFIED]| - PASS zero throttle -> zero thrust\n");
 }
 
 void test_thrust_monotonic() {
@@ -41,24 +41,24 @@ void test_thrust_monotonic() {
         CHECK(thrust >= prev);
         prev = thrust;
     }
-    printf("OK thrust is monotonically increasing (10%%–90%%)\n");
+    printf("[VERIFIED]| - PASS thrust is monotonically increasing (10%%–90%%)\n");
 
     // Soft check: 100% throttle — known propeller saturation zone, no exit
     float thrust_90 = getMotorThrustNewtons(0.9f, MOTOR_V_NOMINAL);
     float thrust_100 = getMotorThrustNewtons(1.0f, MOTOR_V_NOMINAL);
     if (thrust_100 < thrust_90) {
-        printf("WARN thrust drops at 100%% throttle: %.4fN -> %.4fN "
-               "(propeller saturation / Hall sensor RPM underread at >20k RPM)\n",
+        printf("[VERIFIED]| - WARN thrust drops at 100%% throttle: %.4fN -> %.4fN "
+               "(propeller saturation / Hall sensor RPM under read at > 20k RPM)\n",
                thrust_90, thrust_100);
     }
 }
 
 void test_voltage_effect() {
-    // Higher voltage → higher thrust (2S range: 6.6V–8.4V)
+    // Higher voltage -> higher thrust (2S range: 6.6V–8.4V)
     float thrust_high = getMotorThrustNewtons(0.5f, 8.4f);
     float thrust_low  = getMotorThrustNewtons(0.5f, 6.6f);
     CHECK(thrust_high > thrust_low);
-    printf("OK higher voltage → higher thrust\n");
+    printf("[VERIFIED]| - PASS higher voltage -> higher thrust\n");
 }
 
 // === Current Tests ===
@@ -71,13 +71,13 @@ void test_current_monotonic() {
         CHECK(current >= prev);
         prev = current;
     }
-    printf("OK current is monotonically increasing (10%%–90%%)\n");
+    printf("[VERIFIED]| - PASS current is monotonically increasing (10%%–90%%)\n");
 
     // Soft check: 100% throttle — consistent with thrust saturation zone, no exit
     float current_90  = getMotorCurrentAmps(0.9f, MOTOR_V_NOMINAL);
     float current_100 = getMotorCurrentAmps(1.0f, MOTOR_V_NOMINAL);
     if (current_100 < current_90) {
-        printf("WARN current drops at 100%% throttle: %.4fA -> %.4fA "
+        printf("[VERIFIED]| - WARN current drops at 100%% throttle: %.4fA -> %.4fA "
                "(consistent with propeller saturation at >20k RPM)\n",
                current_90, current_100);
     }
@@ -95,24 +95,21 @@ void test_current_voltage_quadratic() {
     // With V_eff model: ratio ≈ (V_eff_high/V_eff_low)² adjusted for idle current
     // Should be between 1.0 and (V_high/V_low)² = 1.44
     CHECK(ratio_actual > 1.0f && ratio_actual < 2.0f);
-    printf("OK current V_eff-scaling: I(%.1fV)/I(%.1fV) = %.3f\n",
+    printf("[VERIFIED]| - PASS current V_eff-scaling: I(%.1fV)/I(%.1fV) = %.3f\n",
            v_high, v_low, ratio_actual);
 }
 
-int main() {
-    printf("\n=== Motor Model Tests: BrotherHobby 1404 KV4600 + T4030 (2S) ===\n");
-    printf("V_nominal = %.1fV\n\n", MOTOR_V_NOMINAL);
+int main() {    
+    printf("[VERIFIED]| ### Thrust Tests\n");
 
-    printf("--- Thrust Tests ---\n");
     test_zero_throttle();
     test_thrust_monotonic();
     test_voltage_effect();
 
-    printf("\n--- Current Tests ---\n");
+    printf("\n[VERIFIED]| ### Current Tests\n");
+    
     test_current_monotonic();
     test_current_voltage_quadratic();
-
-    printf("\nOK All tests passed.\n");
 
     printf("\n--- TRACE DATA FOR OCTAVE ---\n");
     printf("[TRACE]| THROTTLE; THRUST_N; CURRENT_A\n");

@@ -22,6 +22,14 @@ extern "C" {
         }
         return len;
     }
+    // Not print stubs in console
+    void _close(void) {}
+    void _lseek(void) {}
+    void _read(void) {}
+    void _fstat(void) {}
+    int _isatty(int file) { return 1; }
+    int _getpid(void) { return 1; }
+    void _kill(int pid, int sig) {}
 }
 
 // Security wrapper for printf, max 256 chars
@@ -51,7 +59,7 @@ bool approxEqual(float actual, float expected, float tol) {
     
     // If the test fails, print the actual values to UART
     if (!ok) {
-        printf("\n[DEBUG-MATH] Actual: %.4f | Expected: %.4f | Diff: %.4f\n", actual, expected, diff);
+        printf("\n[VERIFIED]| - Actual: %.4f | Expected: %.4f | Diff: %.4f\n", actual, expected, diff);
     }
     return ok;
 }
@@ -59,7 +67,7 @@ bool approxEqual(float actual, float expected, float tol) {
 
 static void check(bool ok, const char* expr, const char* file, int line) {
     if (!ok) {
-        printf("FAIL: %s\n  → %s:%d\n", expr, file, line);
+        printf("[VERIFIED]| - FAIL: %s\n  → %s:%d\n", expr, file, line);
         // On a microcontroller, we cannot call exit(1), so we hang:
         while(1) {}
     }
@@ -78,14 +86,14 @@ void test_thrust_monotonic() {
         CHECK(t >= last_t);
         last_t = t;
     }
-    printf("OK THRUST is monotonically increasing (10%%-90%%)\n");
+    printf("[VERIFIED]| - PASS THRUST is monotonically increasing (10%%-90%%)\n");
 
     // Soft check: 100% throttle - known propeller saturation zone, no hang
     float thrust_90  = getMotorThrustNewtons(0.9f, MOTOR_V_NOMINAL);
     float thrust_100 = getMotorThrustNewtons(1.0f, MOTOR_V_NOMINAL);
     if (thrust_100 < thrust_90) {
-        printf("WARN thrust drops at 100%% throttle: %.4fN -> %.4fN "
-               "(propeller saturation / Hall sensor RPM underread at >20k RPM)\n",
+        printf("[VERIFIED]| - WARN thrust drops at 100%% throttle: %.4fN -> %.4fN "
+               "(propeller saturation / Hall sensor RPM underread at > 20k RPM)\n",
                thrust_90, thrust_100);
     }
 }
@@ -94,7 +102,7 @@ void test_voltage_effect() {
     float t_low  = getMotorThrustNewtons(0.5f, 7.0f);
     float t_high = getMotorThrustNewtons(0.5f, 8.4f);
     CHECK(t_high > t_low);
-    printf("OK higher VOLTAGE → higher THRUST\n");
+    printf("[VERIFIED]| - PASS higher VOLTAGE -> higher THRUST\n");
 }
 
 void test_current_monotonic() {
@@ -105,13 +113,13 @@ void test_current_monotonic() {
         CHECK(c >= last_c);
         last_c = c;
     }
-    printf("OK CURRENT is monotonically increasing (10%%-90%%)\n");
+    printf("[VERIFIED]| - PASS CURRENT is monotonically increasing (10%%-90%%)\n");
 
     // Soft check: 100% throttle - consistent with thrust saturation zone, no hang
     float current_90  = getMotorCurrentAmps(0.9f, MOTOR_V_NOMINAL);
     float current_100 = getMotorCurrentAmps(1.0f, MOTOR_V_NOMINAL);
     if (current_100 < current_90) {
-        printf("WARN current drops at 100%% throttle: %.4fA -> %.4fA "
+        printf("[VERIFIED]| - WARN current drops at 100%% throttle: %.4fA -> %.4fA "
                "(consistent with propeller saturation at >20k RPM)\n",
                current_90, current_100);
     }
@@ -125,7 +133,7 @@ void test_current_voltage_quadratic() {
     
     float ratio_actual = i_high / i_low;
     CHECK(ratio_actual > 1.0f && ratio_actual < 2.0f);
-    printf("OK current V_eff-scaling: I(%.1fV)/I(%.1fV) = %.3f\n",
+    printf("[VERIFIED]| - PASS current V_eff-scaling: I(%.1fV)/I(%.1fV) = %.3f\n",
            v_high, v_low, ratio_actual);
 }
 
@@ -149,21 +157,15 @@ int main() {
     *usart2_brr   = 0x0683; // 9600
     *usart2_cr1   = (1 << 13) | (1 << 3) | (1 << 2);
 
-    // 2. RUN TESTS
-    printf("\n=== RENODE Test Bench: BrotherHobby 1404 KV4600 ===\n");
-    printf("V_nominal = %.1fV\n\n", MOTOR_V_NOMINAL);
-
-    
-    printf("--- Thrust Tests ---\n");        
+    // 2. RUN TESTS    
+    printf("[VERIFIED]| \n### Thrust Tests\n");        
     test_thrust_monotonic();
     test_voltage_effect();
 
-    printf("\n--- Current Tests ---\n");    
+    printf("\n[VERIFIED]| \n### Current Tests\n");    
     test_current_monotonic();
     test_current_voltage_quadratic();
     
-
-    printf("\n✓ All tests passed in Renode Emulator.\n");
 
     // 3. OUTPUT TRACE DATA FOR OCTAVE (End-to-end validation)
     printf("\n--- TRACE DATA FOR OCTAVE ---\n");
