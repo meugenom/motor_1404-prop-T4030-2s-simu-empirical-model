@@ -1,0 +1,30 @@
+
+=== Motor Model Tests: BrotherHobby 1404 KV4600 + T4030 (2S) ===
+V_nominal = 7.4V
+
+--- Thrust Tests ---
+OK zero throttle → zero thrust
+OK thrust is monotonically increasing
+OK higher voltage → higher thrust
+
+--- Current Tests ---
+OK current is monotonically increasing
+OK current V_eff-scaling: I(8.4V)/I(7.0V) = 1.385
+
+OK All tests passed.
+
+--- TRACE DATA FOR OCTAVE ---
+[TRACE]| THROTTLE; THRUST_N; CURRENT_A
+[TRACE]| 0.00 ; 0.000000 ; 0.110000 
+[TRACE]| 0.10 ; 0.000100 ; 0.375000 
+[TRACE]| 0.20 ; 0.157600 ; 0.946600 
+[TRACE]| 0.30 ; 0.251900 ; 1.621300 
+[TRACE]| 0.40 ; 0.385200 ; 2.663200 
+[TRACE]| 0.50 ; 0.485000 ; 3.841600 
+[TRACE]| 0.60 ; 0.534500 ; 4.160700 
+[TRACE]| 0.70 ; 0.684100 ; 5.826400 
+[TRACE]| 0.80 ; 0.815500 ; 7.458900 
+[TRACE]| 0.90 ; 0.914800 ; 8.794500 
+[TRACE]| 1.00 ; 0.838900 ; 8.106900 
+
+--- TEST BENCH: FINISHED ---
