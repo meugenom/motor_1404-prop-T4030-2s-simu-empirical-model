@@ -1,17 +1,13 @@
+[VERIFIED]| ### Thrust Tests
+[VERIFIED]| - PASS zero throttle -> zero thrust
+[VERIFIED]| - PASS thrust is monotonically increasing (10%–90%)
+[VERIFIED]| - WARN thrust drops at 100% throttle: 0.9148N -> 0.8389N (propeller saturation / Hall sensor RPM under read at > 20k RPM)
+[VERIFIED]| - PASS higher voltage -> higher thrust
 
-=== Motor Model Tests: BrotherHobby 1404 KV4600 + T4030 (2S) ===
-V_nominal = 7.4V
-
---- Thrust Tests ---
-OK zero throttle → zero thrust
-OK thrust is monotonically increasing
-OK higher voltage → higher thrust
-
---- Current Tests ---
-OK current is monotonically increasing
-OK current V_eff-scaling: I(8.4V)/I(7.0V) = 1.385
-
-OK All tests passed.
+[VERIFIED]| ### Current Tests
+[VERIFIED]| - PASS current is monotonically increasing (10%–90%)
+[VERIFIED]| - WARN current drops at 100% throttle: 8.7945A -> 8.1069A (consistent with propeller saturation at >20k RPM)
+[VERIFIED]| - PASS current V_eff-scaling: I(8.4V)/I(7.0V) = 1.385
 
 --- TRACE DATA FOR OCTAVE ---
 [TRACE]| THROTTLE; THRUST_N; CURRENT_A

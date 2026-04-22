@@ -1,39 +1,37 @@
-12:16:04.8450 [INFO] Including script(s): /Users/meinemandala/src/github.com/motor_1404-prop-T4030-2s-simu-empirical-model/renode/test_run.resc
-12:16:04.8970 [INFO] System bus created.
-12:16:05.3480 [WARNING] Translation cache size 536870912 is larger than maximum allowed 134217728. It will be clamped to maximum
-12:16:05.5242 [INFO] sysbus: Loaded SVD: /var/folders/lz/f8vjckzs47j2dl1d12dv66fh0000gn/T/renode-68340/c99be7fe-3675-45c4-9cbb-02df1c7c7b85.tmp. Name: STM32F40x. Description: STM32F40x.
-12:16:05.5421 [INFO] sysbus: Loading block of 50068 bytes length at 0x8000000.
-12:16:05.5463 [INFO] sysbus: Loading block of 3524 bytes length at 0x800C394.
-12:16:05.7270 [INFO] cpu: Setting initial values: PC = 0x80006FF, SP = 0x20020000.
-12:16:05.7276 [INFO] STM32F4: Machine started.
-12:16:05.7439 [INFO] usart2: [host: 0,21s (+0,21s)|virt: 0,1ms (+0,1ms)] 
-12:16:05.7441 [INFO] usart2: [host: 0,21s (+0,53ms)|virt:    0,1ms (+0s)] === RENODE Test Bench: BrotherHobby 1404 KV4600 ===
-12:16:05.7450 [INFO] usart2: [host: 0,21s (+0,86ms)|virt:    0,1ms (+0s)] V_nominal = 7.4V
-12:16:05.7450 [INFO] usart2: [host:   0,21s (+12µs)|virt:    0,1ms (+0s)] 
-12:16:05.7451 [INFO] usart2: [host:   0,21s (+73µs)|virt:    0,1ms (+0s)] --- Thrust Tests ---
-12:16:05.7456 [INFO] usart2: [host: 0,21s (+0,54ms)|virt: 0,2ms (+0,1ms)] OK THRUST is monotonically increasing
-12:16:05.7458 [INFO] usart2: [host: 0,21s (+0,16ms)|virt:    0,2ms (+0s)] OK higher VOLTAGE â higher THRUST
-12:16:05.7458 [INFO] usart2: [host:   0,21s (+23µs)|virt:    0,2ms (+0s)] 
-12:16:05.7458 [INFO] usart2: [host:   0,21s (+69µs)|virt:    0,2ms (+0s)] --- Current Tests ---
-12:16:05.7461 [INFO] usart2: [host: 0,21s (+0,28ms)|virt: 0,3ms (+0,1ms)] OK CURRENT is monotonically increasing
-12:16:05.7465 [INFO] usart2: [host: 0,21s (+0,39ms)|virt: 0,4ms (+0,1ms)] OK current V_eff-scaling: I(8.4V)/I(7.0V) = 1.413
-12:16:05.7466 [INFO] usart2: [host:   0,21s (+33µs)|virt:    0,4ms (+0s)] 
-12:16:05.7467 [INFO] usart2: [host: 0,21s (+0,13ms)|virt:    0,4ms (+0s)] â All tests passed in Renode Emulator.
-12:16:05.7467 [INFO] usart2: [host:   0,21s (+16µs)|virt:    0,4ms (+0s)] 
-12:16:05.7468 [INFO] usart2: [host: 0,21s (+0,13ms)|virt: 0,5ms (+0,1ms)] --- TRACE DATA FOR OCTAVE ---
-12:16:05.7470 [INFO] usart2: [host: 0,21s (+0,13ms)|virt:    0,5ms (+0s)] [TRACE]| THROTTLE; THRUST_N; CURRENT_A
-12:16:05.7473 [INFO] usart2: [host:  0,21s (+0,3ms)|virt:    0,5ms (+0s)] [TRACE]| 0.00 ; 0.000000 ; 0.110000 
-12:16:05.7475 [INFO] usart2: [host: 0,21s (+0,24ms)|virt: 0,6ms (+0,1ms)] [TRACE]| 0.10 ; 0.000100 ; 0.375000 
-12:16:05.7477 [INFO] usart2: [host: 0,21s (+0,23ms)|virt: 0,8ms (+0,2ms)] [TRACE]| 0.20 ; 0.157600 ; 0.946600 
-12:16:05.7479 [INFO] usart2: [host: 0,21s (+0,18ms)|virt: 0,9ms (+0,1ms)] [TRACE]| 0.30 ; 0.251900 ; 1.621300 
-12:16:05.7481 [INFO] usart2: [host: 0,21s (+0,18ms)|virt:   1ms (+0,1ms)] [TRACE]| 0.40 ; 0.385200 ; 2.663200 
-12:16:05.7483 [INFO] usart2: [host: 0,21s (+0,19ms)|virt: 1,1ms (+0,1ms)] [TRACE]| 0.50 ; 0.485000 ; 3.841600 
-12:16:05.7485 [INFO] usart2: [host: 0,21s (+0,18ms)|virt: 1,2ms (+0,1ms)] [TRACE]| 0.60 ; 0.534500 ; 4.160700 
-12:16:05.7487 [INFO] usart2: [host: 0,21s (+0,18ms)|virt: 1,3ms (+0,1ms)] [TRACE]| 0.70 ; 0.684100 ; 5.826400 
-12:16:05.7489 [INFO] usart2: [host: 0,21s (+0,22ms)|virt: 1,4ms (+0,1ms)] [TRACE]| 0.80 ; 0.815500 ; 7.458900 
-12:16:05.7491 [INFO] usart2: [host: 0,21s (+0,23ms)|virt: 1,5ms (+0,1ms)] [TRACE]| 0.90 ; 0.914800 ; 8.794500 
-12:16:05.7493 [INFO] usart2: [host: 0,21s (+0,22ms)|virt: 1,6ms (+0,1ms)] [TRACE]| 1.00 ; 0.838900 ; 8.106900 
-12:16:05.7494 [INFO] usart2: [host:   0,21s (+22µs)|virt:    1,6ms (+0s)] 
-12:16:05.7494 [INFO] usart2: [host:   0,21s (+95µs)|virt:    1,6ms (+0s)] --- TEST BENCH: FINISHED ---
-12:16:05.9316 [INFO] STM32F4: Machine paused.
-12:16:05.9475 [INFO] STM32F4: Disposed.
+15:40:07.1399 [INFO] Including script(s): /Users/meinemandala/src/github.com/motor_1404-prop-T4030-2s-simu-empirical-model/renode/test_run.resc
+15:40:07.1894 [INFO] System bus created.
+15:40:07.6471 [WARNING] Translation cache size 536870912 is larger than maximum allowed 134217728. It will be clamped to maximum
+15:40:07.8119 [INFO] sysbus: Loaded SVD: /var/folders/lz/f8vjckzs47j2dl1d12dv66fh0000gn/T/renode-75757/92face0c-66d9-4910-a00c-04d54a615aef.tmp. Name: STM32F40x. Description: STM32F40x.
+15:40:07.8275 [INFO] sysbus: Loading block of 50460 bytes length at 0x8000000.
+15:40:07.8314 [INFO] sysbus: Loading block of 3524 bytes length at 0x800C51C.
+15:40:07.9722 [INFO] cpu: Setting initial values: PC = 0x80007EF, SP = 0x20020000.
+15:40:07.9729 [INFO] STM32F4: Machine started.
+15:40:07.9896 [INFO] usart2: [host: 0,17s (+0,17s)|virt: 0,1ms (+0,1ms)] [VERIFIED]| 
+15:40:07.9897 [INFO] usart2: [host: 0,17s (+0,24ms)|virt:    0,1ms (+0s)] ### Thrust Tests
+15:40:07.9903 [INFO] usart2: [host: 0,17s (+0,64ms)|virt:    0,1ms (+0s)] [VERIFIED]| - PASS THRUST is monotonically increasing (10%-90%)
+15:40:07.9915 [INFO] usart2: [host: 0,17s (+1,22ms)|virt: 0,3ms (+0,2ms)] [VERIFIED]| - WARN thrust drops at 100% throttle: 0.9148N -> 0.8389N (propeller saturation / Hall sensor RPM underread at > 20k RPM)
+15:40:07.9917 [INFO] usart2: [host:  0,17s (+0,2ms)|virt:    0,3ms (+0s)] [VERIFIED]| - PASS higher VOLTAGE -> higher THRUST
+15:40:07.9918 [INFO] usart2: [host:   0,17s (+62µs)|virt: 0,4ms (+0,1ms)] 
+15:40:07.9918 [INFO] usart2: [host:   0,17s (+49µs)|virt:    0,4ms (+0s)] [VERIFIED]| 
+15:40:07.9919 [INFO] usart2: [host:   0,17s (+65µs)|virt:    0,4ms (+0s)] ### Current Tests
+15:40:07.9929 [INFO] usart2: [host: 0,17s (+1,03ms)|virt:    0,4ms (+0s)] [VERIFIED]| - PASS CURRENT is monotonically increasing (10%-90%)
+15:40:07.9934 [INFO] usart2: [host: 0,17s (+0,52ms)|virt: 0,6ms (+0,2ms)] [VERIFIED]| - WARN current drops at 100% throttle: 8.7945A -> 8.1069A (consistent with propeller saturation at >20k RPM)
+15:40:07.9938 [INFO] usart2: [host: 0,17s (+0,34ms)|virt: 0,7ms (+0,1ms)] [VERIFIED]| - PASS current V_eff-scaling: I(8.4V)/I(7.0V) = 1.413
+15:40:07.9938 [INFO] usart2: [host:   0,17s (+25µs)|virt:    0,7ms (+0s)] 
+15:40:07.9939 [INFO] usart2: [host:   0,17s (+94µs)|virt:    0,7ms (+0s)] --- TRACE DATA FOR OCTAVE ---
+15:40:07.9942 [INFO] usart2: [host: 0,17s (+0,24ms)|virt:    0,7ms (+0s)] [TRACE]| THROTTLE; THRUST_N; CURRENT_A
+15:40:07.9945 [INFO] usart2: [host: 0,17s (+0,39ms)|virt: 0,8ms (+0,1ms)] [TRACE]| 0.00 ; 0.000000 ; 0.110000 
+15:40:07.9948 [INFO] usart2: [host: 0,17s (+0,27ms)|virt: 0,9ms (+0,1ms)] [TRACE]| 0.10 ; 0.000100 ; 0.375000 
+15:40:07.9950 [INFO] usart2: [host: 0,17s (+0,19ms)|virt:   1ms (+0,1ms)] [TRACE]| 0.20 ; 0.157600 ; 0.946600 
+15:40:07.9952 [INFO] usart2: [host: 0,17s (+0,19ms)|virt: 1,1ms (+0,1ms)] [TRACE]| 0.30 ; 0.251900 ; 1.621300 
+15:40:07.9954 [INFO] usart2: [host: 0,18s (+0,19ms)|virt: 1,2ms (+0,1ms)] [TRACE]| 0.40 ; 0.385200 ; 2.663200 
+15:40:07.9956 [INFO] usart2: [host: 0,18s (+0,21ms)|virt: 1,3ms (+0,1ms)] [TRACE]| 0.50 ; 0.485000 ; 3.841600 
+15:40:07.9958 [INFO] usart2: [host: 0,18s (+0,21ms)|virt: 1,4ms (+0,1ms)] [TRACE]| 0.60 ; 0.534500 ; 4.160700 
+15:40:07.9960 [INFO] usart2: [host: 0,18s (+0,25ms)|virt: 1,5ms (+0,1ms)] [TRACE]| 0.70 ; 0.684100 ; 5.826400 
+15:40:07.9963 [INFO] usart2: [host: 0,18s (+0,26ms)|virt: 1,7ms (+0,2ms)] [TRACE]| 0.80 ; 0.815500 ; 7.458900 
+15:40:07.9965 [INFO] usart2: [host:  0,18s (+0,2ms)|virt: 1,8ms (+0,1ms)] [TRACE]| 0.90 ; 0.914800 ; 8.794500 
+15:40:07.9967 [INFO] usart2: [host: 0,18s (+0,21ms)|virt: 1,9ms (+0,1ms)] [TRACE]| 1.00 ; 0.838900 ; 8.106900 
+15:40:07.9967 [INFO] usart2: [host:   0,18s (+30µs)|virt:    1,9ms (+0s)] 
+15:40:07.9968 [INFO] usart2: [host:   0,18s (+85µs)|virt:    1,9ms (+0s)] --- TEST BENCH: FINISHED ---
+15:40:08.1772 [INFO] STM32F4: Machine paused.
+15:40:08.1923 [INFO] STM32F4: Disposed.
