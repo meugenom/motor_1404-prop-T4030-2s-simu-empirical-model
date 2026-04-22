@@ -28,7 +28,7 @@ plot(THROTTLE_TEST * 100, err_thrust_pct, '-ob', 'LineWidth', 2, 'DisplayName', 
 % Current error line (red, with markers)
 plot(THROTTLE_TEST * 100, err_current_pct, '-sr', 'LineWidth', 2, 'DisplayName', 'Current Error (%)');
 
-title('Discrepancy between C++ model (Posix/STM32) and real test stand (Datasheet)');
+title('Discrepancy between real Stand Data and Motor-Model');
 xlabel('Throttle Level (%)');
 ylabel('Relative Error (%)');
 legend('Location', 'southeast');
@@ -40,3 +40,14 @@ hold off;
 
 % Optionally: Save the plot as an image for SPEC.md
 saveas(figure_1, fullfile(plot_dir, 'plot4_errors.png'));
+
+% Generate a Summary in the Validation.md
+filename_validation_sum = '../VALIDATION.md';
+filename_text_sum = '../logs/test_summary.txt';
+filename_motor_properties = '../references/Brother-Hobby-1404-4600KV-Properties.csv';
+generate_validation_sum(filename_validation_sum, ...
+                        filename_text_sum, ...
+                        filename_motor_properties, ...
+                        THROTTLE_TEST, err_thrust_pct, err_current_pct);
+
+printf("Validation analysis completed.\n");
