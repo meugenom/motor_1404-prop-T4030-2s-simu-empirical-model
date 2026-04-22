@@ -1,318 +1,234 @@
 # BrotherHobby 1404 KV4600 — Semi-Empirical Motor Model for SIL Simulation
 
-A data-driven C++ motor model for drone flight simulation, built from publicly available stand test data using aerodynamic regression ($F = k \cdot n^2$), polynomial fits, and precomputed lookup tables. The model is semi-empirical: it combines the physical thrust law with black-box polynomials for RPM and current, bypassing idealized $K_v$/$K_t$ constants in favor of direct curve fitting that captures real ESC nonlinearities and propeller aerodynamics.
+## About This Project (In Progress)
 
-**Setup:** BrotherHobby 1404 KV4600 + iFlight Nazgul T4030 propeller on 2S LiPo (7.4V)
+**Methodology:**
+- This project is built upon the [light-mbse-pipeline-skeleton](https://github.com/meugenom/light-mbse-pipeline-skeleton) to ensure full requirements traceability and automated validation.
+- A data-driven C++ motor model for drone flight simulation, built from publicly available stand test data.
+- The model is **semi-empirical**: it combines the physical thrust law with gray-box polynomials.
 
----
+**Setup:**
+- Datasheets BLDC Motor `BrotherHobby 1404 KV4600` + `iFlight Nazgul T4030` propeller on `2S` LiPo (7.4V).
 
-## 🚧 Work in Progress:
-  - v1.0 (current): static LUT from datasheet stand test - no dynamics, no temperature effects, no motor-to-motor variation.
-  - Newton-Raphson algebraic loop resolution and iterative $V_{eff}$ normalization documented in [GROUP_CALC.md § Model Classification](./GROUP_CALC.md#model-classification-and-known-approximations).
----
+## Iteration Roadmap
 
-## Iteration Roadmap and publishing plan
-
-| Version | What changes | Requires |
-|---|---|---|
-| v1.0 (current) STATIC | Static LUT from stand test datasheet | Octave + datasheet |
-| v2.0 DYNAMIC | Rotor inertia + back-EMF dynamics | Oscilloscope + test bench |
-| v3.0 HIL | Eddy current + temperature + commutation noise | Full drone on tether |
-
-> v1.0 is a static model based on the stand test from tytorobotics.com.
-> v2.0 measurements planned on physical test bench.
-> v3.0 measurements planned on a real drone in a controlled environment.
-> Results will be published on [meugenom.com](https://meugenom.com) as open-source data and code.
-
+| Version | Status | Requires | Reference |
+|---|---|---|---|
+| v1.3.0 STATIC | current | Octave->C++(LUT)->Tests->Report | [Datasheets](https://database.tytorobotics.com/tests/7xzn/brother-hobby-1404-4600kv) |
+| v2.0.0 DYNAMIC | N/A |Rotor inertia + back-EMF dynamics | Oscilloscope + test bench | |
+| v3.0.0 HIL | N/A |Eddy current + temperature + commutation noise | |
 
 ## Table of Contents
-- [Iteration Roadmap](#iteration-roadmap-and-publishing-plan)
-- [What This Is](#what-this-is)
+
+- [Iteration Roadmap](#iteration-roadmap)
+- [Table of Contents](#table-of-contents)
+- [Motivation](#motivation)
+- [Environment & Toolchain (Reproducibility)](#environment--toolchain-reproducibility)
 - [Project Documentation](#project-documentation)
-- [How the Model Works](#how-the-model-works)
-- [Code Pipeline](#code-pipeline)
+- [Project Directory Structure](#project-directory-structure)
+- [Octave Workflow](#octave-workflow)
+- [Code Workflow](#code-workflow)
+- [Renode Workflow](#renode-workflow)
 - [Build & Test](#build--test)
-- [Regenerating the Model](#regenerating-the-model-gnu-octave)
-- [Usage in a Simulator](#usage-in-a-simulator)
-- [Known Limitations](#known-limitations)
-- [Model Specifications](#model-specifications)
-- [Model Accuracy](#model-accuracy)
-- [What This Model Does Not Yet Capture](#what-this-model-does-not-yet-capture)
+- [Validation Workflow, Results](#validation-workflow-results)
+- [Known Problems and Limitations](#known-problems-and-limitations)
 - [References](#references)
 - [License](#license)
 
-
-## What This Is
+## Motivation
 
 This project models the thrust and current output of the **BrotherHobby 1404 KV4600** brushless motor with an **iFlight Nazgul T4030** propeller as a function of throttle position and battery voltage.
-
-The model is intended for use in drone simulators where realistic motor behavior is required — including voltage sag effects and propeller load characteristics.
-
-**Data source:** [BrotherHobby 1404 KV4600 stand test](https://database.tytorobotics.com/tests/7xzn/brother-hobby-1404-4600kv) from tytorobotics.com  
-11 measurement points (0–100% throttle, 1000–2000 µs) collected on 2S LiPo (~7.4V), with an iFlight Nazgul T4030 propeller and VGood 60A ESC.
-
----
 
 ## Project Documentation
 
 | File | Description |
 |------|-------------|
-| [GROUP_SPEC.md](./GROUP_SPEC.md) | Component specifications, raw stand test data |
-| [GROUP_CALC.md](./GROUP_CALC.md) | Model derivation: math, pipeline, voltage scaling |
+| [FULL SPECIFICATION](./SPEC.md) | Component specifications, raw stand test data |
+| [CALCULATION DETAILS](./CALC.md) | Model derivation: math, pipeline, voltage scaling |
+| [VALIDATION REPORT](./VALIDATION.md) | Validation results and performance metrics |
 
----
 
-## How the Model Works
+## Environment & Toolchain (Reproducibility)
 
-All computation in `src/motor.cpp` is **table lookup + linear interpolation**, no math at runtime.
+**Used System:** macOS Tahoe 26.4.1 on Apple Silicon
+Scripts and tests in this project can be reproduced with the following tools:
 
-### Why V_nominal = 7.4V
+| Tool | Version | Purpose |
+| ------ | --------- | --------- |
+| **GNU Octave** | 11.1.0 | Mathematical modeling, generation LUT, Reports|
+| **GCC Clang** | 21.0.0 | Runtime model implementation |
+| **GCC arm-none-eabi-gcc** | 15.2.rel1 | Bare-metal target compilation|
+| **Renode** | 1.16.1.16858 | Instruction-accurate hardware emulation |
+| **CMake** | 4.3.1 | Build system management |
+| **Bash** | 5.3.9(1) | Scripting and automation |
 
-The stand test was conducted on a 2S LiPo: voltage varied from 7.41V (idle) to 6.83V (100% throttle) as current increased. At full throttle with $I = 7.5A$ and $R_m = 207\text{m}\Omega$, the $I \cdot R$ drop is $1.55V$ — over 20% of the supply voltage. All RPM and current values are normalized to $V_{nominal}$ before fitting. 7.4V is the nominal 2S voltage (2×3.7V).
 
-### Octave (`octave/motor_model.m`) — offline preprocessing
-
-The Octave script does all the physics once and bakes the results into arrays:
-
-1. **Load CSV** from `datasheets/Brother-Hobby-1404_4600KV_Blane_Townsend.csv`
-2. **Filter noisy data:** exclude points with RPM < 2000 (idle and near-stall)
-3. **Normalize throttle:** PWM 1000–2000 µs → 0.0–1.0
-4. **Normalize RPM** to $V_{nominal}$: $RPM_{norm} = RPM_{actual} \cdot V_{nom}/V_{actual}$
-5. **Normalize current** to $V_{nominal}$: load component scaled by $(V_{nom}/V_{actual})^2$, idle current kept constant
-6. **Polynomial fit (Gas → RPM):** `polyfit(throttle, rpm_norm, 2)` — 2nd-degree polynomial on normalized data
-7. **Physical thrust model:** $F = k \cdot n^2$ with coefficient $k$ from Least Squares on raw data, applied to normalized RPM
-6. **Polynomial fit (Gas → Current):** `polyfit(throttle, current_norm, 2)` — separate 2nd-degree polynomial on normalized data
-7. **Evaluate all models** on a uniform 101-point grid (0.00–1.00, step 0.01)
-8. **Enforce boundary conditions:** zero thrust/RPM at 0% throttle, idle current floor
-9. **Export** everything to `includes/motor_lut.h` (including `MOTOR_R_INTERNAL`)
-
-The polynomials and intermediate RPM values are **not used at runtime** — they only exist inside the Octave script.
-
-Full algorithm description: [GROUP_CALC.md](./GROUP_CALC.md)
-
-### C++ (`src/motor.cpp`) — runtime
-
-Both public functions do the same thing: O(1) table lookup + linear interpolation + voltage scaling.
-
-**Thrust** scales with $V_{eff}^2$, where $V_{eff} = V - I_{nom} \cdot R_m$ accounts for the internal resistance drop:
-
-$$F[N] = F_{nom}(throttle) \cdot \left(\frac{V_{eff}}{V_{eff,nom}}\right)^2$$
-
-**Current** uses split scaling — idle current stays constant, load current scales with $V_{eff}^2$:
-
-$$I[A] = I_{idle} + (I_{nom}(throttle) - I_{idle}) \cdot \left(\frac{V_{eff}}{V_{eff,nom}}\right)^2$$
-
----
-
-## Code Pipeline
+## Pipeline Overview
 
 ```text
-  octave/motor_model.m          includes/motor_lut.h          src/motor.cpp
-  ──────────────────            ────────────────────          ──────────────────
-  Octave script         ──►     Auto-generated         ──►    C++ runtime
-  - filter noise                C++ header                    - tabInterp O(1)
-  - normalize RPM to V_nom      (DO NOT EDIT)                 - V_eff thrust scaling
-  - normalize current to V_nom                                - V_eff current scaling
-  - polyfit Gas→RPM                                           - no polynomials at runtime
-  - F=k·n² thrust model
-  - polyfit Gas→Current
-  - bake 101-pt tables
-  - kgf→N conversion
+              new Iteration
+                   |
+                   ▼
+┌─────────────────────────────────────────┐
+│               Preparing:                │
+│1. Searching Raw Data                    │     
+│2. Convert Raw Data to Specifications    │
+│3. Methodology of Calculation            │
+└───────────────────┬─────────────────────┘
+                    │                       
+                    ▼                       
+┌─────────────────────────────────────────┐
+│        Octave Mathematical Model.       │
+│1. Approximation of Curves               │
+│2. Algorithm Logic and model design      │
+│3. Export LUT Generation                 │
+└───────────────────┬─────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│         C/C++ Model Design              │
+│1. Import LUT.                           │
+│2. Implement Algorithm Logic             │
+│3. Optimize for Bare-Metal               │    
+│4. Prepare Test Cases                    │
+└───────────────────┬─────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│         Renode Model Testing            │
+│1. Set up Test's Environment             │
+│2. Run Simulations                       │
+│3. Export Logs to CSV Data               │
+└───────────────────┬─────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│         Results Analysis                │
+│1. Compare with Datasheet and Stand Test │
+│2. Errors Analyse  and Parameter Tracing │
+│3. Validation Report                     │
+└───────────────────┬─────────────────────┘
+                    │
+                    ▼
+            End of Iteration
+
 ```
 
-`includes/motor_lut.h` is fully auto-generated by `octave/motor_model.m` and must never be edited manually.
+## Project Directory Structure
 
-### Workflow (end-to-end)
+```text
+├── README.md 
+├── CALC.md
+├── SPEC.md
+├── VALIDATION.md
+├── METRICS.md
+├── LICENSE
+├── ltspice/ /* muffler */
+├── octave/ /* Octave scripts for calculations */
+├── references/ /* Reference materials, datasheets, papers */
+├── src/ /* Source code */  
+├── tests/ /* Test cases and validation scripts */
+├── build(build_stm32)/ /* Build artifacts */
+├── renode/ /* Renode simulation environment */
+├── docs/ /* Documentation */
+├── logs/ /* Logs */
+```
 
-1. `octave/motor_model.m` loads CSV, fits models, generates lookup tables.
-2. `includes/motor_lut.h` is auto-generated with four 101-point arrays.
-3. `src/motor.cpp` compiles the runtime model used by simulators.
-4. `src/test_motor.cpp` validates thrust/current against datasheet values.
+## Octave Workflow
 
----
+1. **Load CSV** from `references/Brother-Hobby-1404-4600KV_Propeller-T4030.csv`
+2. **Filter noisy data:** exclude points with RPM < 2000 (idle and near-stall)
+3. **Normalize throttle:** PWM 1000–2000 -> 0.0 - 1.0
+4. **Normalize RPM** to $V_{nominal}$: $RPM_{norm} = RPM_{actual} \cdot V_{nom}/V_{actual}$
+5. **Normalize current** to $V_{nominal}$: load component scaled by $(V_{nom}/V_{actual})^2$, idle current kept constant
+6. **Physical thrust model:** $F = k \cdot n^2$ with coefficient $k$ from Least Squares on raw (unnormalized) data
+7. **pchip interpolation (Gas -> RPM):** `interp1(throttle_norm, rpm_norm, lut_throttle, 'pchip')` — shape-preserving interpolation on all normalized points
+8. **pchip interpolation (Gas -> Current):** `interp1(throttle_norm, current_norm, lut_throttle, 'pchip')` — shape-preserving interpolation on all normalized points
+9. **Evaluate all models** on a uniform 101-point grid (0.00 - 1.00, step 0.01)
+10. **Enforce boundary conditions:** zero thrust/RPM at 0% throttle, idle current floor
+11. **Export** everything to `src/includes/motor_lut.h` (including `MOTOR_R_INTERNAL`)
+
+Full algorithm description: [CALC.md](./CALC.md)
+
+## Code Workflow
+
+1. **Import LUT:** Include `src/includes/motor_lut.h` in `src/core/motor.cpp`
+2. **Implement Algorithm:** in `src/core/motor.cpp` both for POSIX and STM32 platforms
+
+## Renode Workflow
+
+1. **Set up Environment:** `renode/test_run.resc` — define the test bench, load the model firmware, set up peripherals
+2. **Logs:** `./start.sh` — execute the renode command with logs parameters
+3. **Logs Output:** `./logs`
 
 ## Build & Test
 
-The model uses a semi-empirical $F = k \cdot n^2$ fit for thrust and 2nd-degree polynomial for current. This provides smooth transitions between points and prevents step-response artifacts in PID controllers during simulation.
+1. **Build:** `./start.sh` — Fully pipeline automation: builds the model firmware, runs Renode tests, exports logs, and generates validation reports.
+2. **Test:** `./start.sh` — Executes the Renode test bench, POSIX unit tests, and generates validation reports.
+3. **Test's Reports:**  in `./logs` as `logs/motor_test_posix.log` and `logs/motor_test_stm32.log`
 
-```sh
-cd build && rm -rf * && cmake ..
-make -j$(sysctl -n hw.ncpu)
-./test_motor
-```
+## Validation Workflow, Results
 
-Expected output (all green):
+### Thrust Tests
 
 ```text
-=== Motor Model Tests: BrotherHobby 1404 KV4600 + T4030 (2S) ===
-V_nominal = 7.4V
-
---- Thrust Tests ---
-✓ zero throttle → zero thrust
-✓ thrust at 30%: 0.250N (expected 0.244N)
-✓ thrust at 50%: 0.446N (expected 0.453N)
-✓ thrust at 70%: 0.615N (expected 0.615N)
-✓ thrust is monotonically increasing
-✓ higher voltage → higher thrust
-
---- Current Tests ---
-✓ current at 30%: 1.69A (expected 1.59A)
-✓ current at 50%: 3.51A (expected 3.60A)
-✓ current at 70%: 5.21A (expected 5.32A)
-✓ current is monotonically increasing
-✓ current V_eff-scaling: I(8.4V)/I(7.0V) = 1.485
-
-✓ All tests passed.
-Model accuracy (30/50/70%): 2.2% / 1.4% / 0.0% | avg=1.2%
-```
----
-
-## Regenerating the Model (GNU Octave)
-
-If the propeller or motor changes, update the data in `motor_model.m` and re-run:
-
-```sh
-cd octave && octave ./motor_model.m
-```
-This overwrites `includes/motor_lut.h` with new precomputed tables. Then rebuild the C++ project.
-> **Note:** Run from `octave/` directory — the script uses relative paths to `../includes/`, `../datasheets/`, and `../plots/`.
-
----
-
-## Usage in a Simulator
-
-Copy `src/motor.cpp`, `includes/motor.h`, `includes/motor_lut.h` into your project, or use CMake:
-
-```cmake
-add_subdirectory(path/to/motor_1404-prop-T4030-2s-simu-empirical-model)
-target_link_libraries(your_target PRIVATE motor_model)
+  - PASS zero throttle -> zero thrust
+  - PASS thrust is monotonically increasing (10%–90%)
+  - WARN thrust drops at 100% throttle: 0.9148N -> 0.8389N (propeller saturation / Hall sensor RPM under read at > 20k RPM)
+  - PASS higher voltage -> higher thrust
 ```
 
-```cpp
-#include "motor.h"
+### Current Tests
 
-float thrustN  = getMotorThrustNewtons(0.5f, 7.4f);  // throttle, voltage
-float currentA = getMotorCurrentAmps(0.5f, 7.4f);
+```text
+  - PASS current is monotonically increasing (10%–90%)
+  - WARN current drops at 100% throttle: 8.7945A -> 8.1069A (consistent with propeller saturation at >20k RPM)
+  - PASS current V_eff-scaling: I(8.4V)/I(7.0V) = 1.385
 ```
 
----
+### Model Accuracy
 
-## Known Limitations
+**Max Thrust Error:** 17.33%
+**Max Current Error:** 17.78%
 
-### Low-throttle region (0–9%)
+> WHY such errors?
 
-The first two datasheet points (0% and 10% throttle) are filtered out due to noise (RPM < 2000). The polynomial extrapolates into this region from the 20%+ data — treat results below 20% as estimates.
+#### 1. Anomaly at 10% throttle (Physical Opportunities):
 
-### High-throttle saturation (90–100%)
+See the Test Report from tytorobotics.com:
+- **10%:** 255 RPM -> THRUST: 5.88 Gramms/N but **should be 0,13 Gramms/N** (idle current, propeller not spinning)
+- **20%:** 2825 RPM -> THRUST: 15.8 Gramms/N
+This is pure load cell drift. The sensor on the test bench was simply vibrating and it recorded this “noise” in the file.
+Dataset has 11 Points and it's too early to do an accurate analysis.
 
-The last two datasheet points (90% and 100%) show nearly identical RPM and thrust (21741→21673, 79.5g→79.5g), indicating motor/propeller saturation or stall. The model polynomial does not capture this plateau — it continues to increase slightly.
+#### 2. No-gas zone (0% gas):
 
-### Voltage scaling
+**What we see in the graph:** The blue line (thrust error) drops to **-100%**. In the C++ model, we have strictly defined a boundary condition: at 0% PWM signal, the thrust is exactly `0.0000 N`. This is a mathematical absolute. However, in the physical world, the measuring system is subject to gravity, residual mechanical stresses from previous tests (metal hysteresis), and micro-vibrations in the room’s air.
 
-Thrust and current use $V_{eff}^2$ scaling, where $V_{eff} = V - I_{nom} \cdot R_m$ accounts for the internal resistance drop under load. Valid for the practical 2S operating range: **6.6V–8.4V**.
+#### 3. Transient Mode (10% Throttle): Aerodynamic Stall and Stall Torque
 
----
+**What we see in the graph:** A spike in discrepancies, where the raw data indicates the presence of thrust, while the model (calibrated to the aerodynamic law $F = k \cdot n^2$) filters out these readings.
+**Physical explanation:** When the motor starts (low RPM), two physical barriers come into play:
+  - Magnetic resistance (Cogging torque)
+  - Low Reynolds numbers
 
-## Model Specifications
+#### 4. Nominal Operating Mode (20%–70% Throttle): Perfect Convergence
 
-| Parameter | Value |
-|---|---|
-| Motor | BrotherHobby 1404 KV4600 |
-| Propeller | iFlight Nazgul T4030 |
-| KV | 4600 RPM/V |
-| Internal resistance | 207.48 mΩ |
-| Max current | 13.6 A |
-| Idle current (measured) | 0.11 A |
-| Weight (incl. cable) | 8.7 g |
-| Rated voltage | 2S LiPo |
-| V_nominal (model) | 7.4V (2S) |
+**What we see in the graph:** Starting at 20% throttle, both curves (thrust and current) fall within a narrow range of **2%** from the reference value, well within the **5%** tolerance zone.
+**Physical explanation:** The motor reaches a stable RPM. The propeller transitions to the calculated aerodynamic regime (developed turbulent flow). The influence of static friction and mechanical hysteresis becomes negligible compared to the power being generated.
 
-Full specifications: [GROUP_SPEC.md](./GROUP_SPEC.md)
+![Discrepancy between real stand data and Motor-Model](./octave/plots/plot4_errors.png)
 
----
+## Known Problems and Limitations:
 
-## Model Accuracy
-
-| Throttle | Thrust Error | Current Error |
-|----------|-------------|---------------|
-| 30%      | 2.2%        | +6.3%         |
-| 50%      | 1.4%        | 2.5%          |
-| 70%      | 0.0%        | 2.1%          |
-| **avg**  | **1.2%**    | **3.6%**      |
-
-Tolerance: ±5% thrust, ±10% current.
-
-| Region | Status |
-|---|---|
-| 20–90% throttle, ~7.4V | Measured data, avg thrust error 1.2% |
-| 0–19% throttle | Polynomial extrapolation — filtered from regression |
-| 90–100% throttle | Motor saturation zone — model overestimates slightly |
-| Voltage scaling | V_eff model, valid for 6.6V–8.4V (2S operating range) |
-| Temperature effects | Not modelled |
-| Motor-to-motor variation | Not modelled (~2–3% in practice) |
-
----
-
-## What This Model Does Not Yet Capture
-
-Physical phenomena intentionally excluded from v1.0.
-Planned for future iterations with real hardware measurements.
-
-### Rotor Inertia
-
-The model assumes instantaneous throttle response.
-In reality the rotor has angular momentum — it cannot change speed instantly.
-
-Time constant $\tau$ from motor parameters:
-
-$$\tau = \frac{J \cdot R}{k_e \cdot k_T}$$
-
-For 1404 geometry (rotor ~6 g, r ≈ 9 mm): $\tau \approx 5–15 \text{ ms}$.
-
-**Impact on simulation:** PID tuned on this model will be optimistic.
-Real step response is slower than predicted.
-
-### Back-EMF Dynamics
-
-Static model uses $\omega \propto V$ (KV law).
-Transient back-EMF interaction is not captured:
-
-$$V_{eff}(t) = V_{supply} - k_e \cdot \omega(t)$$
-
-where $k_e = \frac{60}{2\pi \cdot KV} = 0.00208 \; \text{V·s/rad}$
-
-Affects current prediction accuracy during rapid throttle changes.
-
-### Eddy Current Losses
-
-At high electrical frequencies, eddy currents in the stator core cause losses beyond DC winding resistance.
-
-Electrical frequency at maximum RPM (9N12P motor, 6 pole pairs):
-
-$$f_{elec} = \frac{21741 \cdot 6}{60} \approx 2174 \; \text{Hz}$$
-
-At ~2 kHz, core losses become significant and explain part of the gap between theoretical and measured efficiency.
-
-### Commutation Noise
-
-PWM switching (30–60 kHz) generates harmonic current spikes not visible in averaged datasheet values.
-
-**System-level effects:**
-- Magnetic field interference with IMU magnetometer
-- Power supply ripple on flight controller
-- EMC behavior of the complete drone system
-
-### Temperature Effects
-
-Copper winding resistance increases with temperature:
-
-$$R(T) = R_{20°C} \cdot [1 + \alpha \cdot (T - 20°C)]$$
-
-where $ \alpha = 0.00393 /°C$ for copper.
-
-At 60°C operating temperature: R increases ~16%, reducing current and thrust at constant throttle.
-
----
+- Rotor Inertia
+- Back-EMF Dynamics
+- Commutation Noise
+- System-level effects:
+  - Magnetic field interference with IMU magnetometer
+  - Power supply ripple on flight controller
+  - EMC behavior of the complete drone system
+- Temperature Effects
 
 ## References
 
@@ -327,8 +243,6 @@ At 60°C operating temperature: R increases ~16%, reducing current and thrust at
 5. "Modelling and Control of a Large Quadrotor Robot", P.Pounds, R.Mahony, P.Corke, 2010
 
 6. Propeller Performance Data at Low Reynolds Numbers, John B. Brandt and Michael S. Selig 2011, pages 1-18.
-
----
 
 ## License
 
