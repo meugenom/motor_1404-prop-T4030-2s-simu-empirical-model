@@ -1,5 +1,5 @@
 # Specifications for Brother Hobby 1404 KV4600 Motor with iFlight Nazgul T4030 Propeller:
-> AUTO-GENERATED from `/octave/main.m` on 2026-04-21 21:30:39
+> AUTO-GENERATED from `/octave/main.m` on 2026-04-22 12:16:01
 
 Based on [Brother Hobby 1404 - 4600KV test data](https://database.tytorobotics.com/tests/7xzn/brother-hobby-1404-4600kv) from tytorobotics.com.
 
