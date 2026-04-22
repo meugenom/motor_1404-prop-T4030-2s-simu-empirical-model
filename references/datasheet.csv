@@ -1,4 +1,0 @@
-Constraint name; Parameter name; Parameter value; Parameter unit
-REQ-PHY-001; Component Tolerance; 5, %
-REQ-PHY-002; Time Constants; 10, ms
-REQ-PHY-XXX; Placeholder for physical requirement; N/A; N/A
