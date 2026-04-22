@@ -1,0 +1,21 @@
+# clear Emulation
+Clear
+
+# create new machine STM32F4
+$name?="STM32F4"
+mach create $name
+machine LoadPlatformDescription @platforms/boards/stm32f4_discovery.repl
+
+# open terminal window UART
+showAnalyzer sysbus.usart2
+
+# loading ELF file
+sysbus LoadELF @build_stm32/test_motor_stm32
+
+# where need to search mem addresses
+sysbus.cpu VectorTableOffset 0x08000000
+
+# start virtual time
+start
+
+quit
