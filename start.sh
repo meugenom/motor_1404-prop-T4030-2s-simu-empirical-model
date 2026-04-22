@@ -48,12 +48,20 @@ if ! grep -q "\[TRACE\]|" logs/motor_test_posix.log; then
 fi
 
 # For Validation we need the parsed test data. 
+
 # test_x_parsed.csv identical to the platforms
 # Parse POSIX trace
 grep "\[TRACE\]|" logs/motor_test_posix.log \
   | sed 's/.*\[TRACE\]|//' \
   | tr -d ' ' > logs/test_posix_parsed.csv
 echo "OK: logs/test_posix_parsed.csv created ($(wc -l < logs/test_posix_parsed.csv) lines)."
+
+
+# test_x_parsed.csv identical to the platforms
+# Parse text trace for human-readable validation summary
+grep "\[VERIFIED\]|" logs/motor_test_posix.log \
+  | sed 's/.*\[VERIFIED\]|[ ]*//' > logs/test_summary.txt
+echo "OK: logs/test_summary.txt created ($(wc -l < logs/test_summary.txt) lines)."
 
 # --- Step 4: Build for STM32 ---
 echo "=== [4/6] Building for STM32... ==="
