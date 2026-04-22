@@ -80,7 +80,9 @@ lut_throttle = linspace(0, 1, MOTOR_TAB_SIZE.parameter_value);
 
 % Model RPM — fitted on NORMALIZED rpm (at V_nominal)
 p_rpm = polyfit(THROTTLE_NORM_FILTERED, RPM_NORM_FILTERED, 2);
-lut_rpm = polyval(p_rpm, lut_throttle);
+%lut_rpm = polyval(p_rpm, lut_throttle);
+lut_rpm = interp1(THROTTLE_NORM, RPM_NORM, lut_throttle, 'pchip', 'extrap');
+
 
 % --- Model Thrust (Physical model F = k * n^2) ---
 % k is a propeller aerodynamic constant — fitted on RAW (unnormalized) data.
@@ -94,7 +96,8 @@ lut_thrust = k_phys * (lut_rpm.^2);
 
 % --- Model Current (Polynomial based on NORMALIZED current) ---
 p_current = polyfit(THROTTLE_NORM_FILTERED, CURRENT_NORM_FILTERED, 2);
-lut_current = polyval(p_current, lut_throttle);
+%lut_current = polyval(p_current, lut_throttle);
+lut_current = interp1(THROTTLE_NORM, CURRENT_NORM, lut_throttle, 'pchip', 'extrap');
 
 
 
