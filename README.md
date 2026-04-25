@@ -1,43 +1,63 @@
-# BrotherHobby 1404 KV4600 — Semi-Empirical Motor Model for SIL Simulation
+# BrotherHobby 1404 KV4600 — Semi-Empirical Motor Model for SiL Simulation
 
-## About This Project (In Progress)
-
+## About This Project
 **Methodology:**
-- This project is built upon the [light-mbse-pipeline-skeleton](https://github.com/meugenom/light-mbse-pipeline-skeleton) to ensure full requirements traceability and automated validation.
-- A data-driven C++ motor model for drone flight simulation, built from publicly available stand test data.
-- The model is **semi-empirical**: it combines the physical thrust law with gray-box polynomials.
+- Built using the [LIGHT-MBSE-PIPELINE-SKELETON](https://github.com/meugenom/light-mbse-pipeline-skeleton) to ensure full requirements traceability and automated validation.
+- A data-driven C++ motor model for drone flight simulation, derived from independent stand test data.
+- The model is **semi-empirical**: it combines the physical aerodynamic thrust law with data-driven gray-box polynomials.
 
 **Setup:**
-- Datasheets BLDC Motor `BrotherHobby 1404 KV4600` + `iFlight Nazgul T4030` propeller on `2S` LiPo (7.4V).
+- **Motor:** BrotherHobby 1404 KV4600
+- **Propeller:** iFlight Nazgul T4030 (2-blade) on 2S LiPo (7.4V)
 
-## Iteration Roadmap
+## Quick Start & Building
 
-| Version | Status | Requires | Reference |
-|---|---|---|---|
-| v1.3.0 STATIC | current | Octave->C++(LUT)->Tests->Report | [Datasheets](https://database.tytorobotics.com/tests/7xzn/brother-hobby-1404-4600kv) |
-| v2.0.0 DYNAMIC | N/A |Rotor inertia + back-EMF dynamics | Oscilloscope + test bench | |
-| v3.0.0 HIL | N/A |Eddy current + temperature + commutation noise | |
+The pipeline is fully automated. You can build the firmware, run Renode simulations, export logs, and generate validation reports with a single command.
+
+```bash
+git clone [https://github.com/meugenom/light-mbse-pipeline-skeleton.git](https://github.com/meugenom/light-mbse-pipeline-skeleton.git)
+cd light-mbse-pipeline-skeleton
+./start.sh
+```
+
+*Note: Test reports will be generated in `./logs/sensor_test_posix.log` and `./logs/sensor_test_stm32.log`.*
+
+### Robust Orchestration
+The pipeline is driven by a fail-safe bash orchestrator (`start.sh` with strict `set -euo pipefail`). It automatically handles:
+- Toolchain dependency checks.
+- Generation and verification of intermediate artifacts (LUT headers).
+- Cross-platform builds (POSIX vs STM32) using CMake.
+- Asynchronous execution and UART log extraction via Renode.
+- On-the-fly parsing of validation traces into CSV formats.
 
 ## Table of Contents
 
-- [Iteration Roadmap](#iteration-roadmap)
+- [Quick Start & Building](#quick-start--building)
 - [Table of Contents](#table-of-contents)
+- [Iteration Roadmap](#iteration-roadmap)
 - [Motivation](#motivation)
 - [Environment & Toolchain (Reproducibility)](#environment--toolchain-reproducibility)
 - [Project Documentation](#project-documentation)
 - [Project Directory Structure](#project-directory-structure)
-- [Octave Workflow](#octave-workflow)
-- [Code Workflow](#code-workflow)
-- [Renode Workflow](#renode-workflow)
-- [Build & Test](#build--test)
-- [Validation Workflow, Results](#validation-workflow-results)
+- [Workflows](#workflows)
+- [Validation](#validation)
 - [Known Problems and Limitations](#known-problems-and-limitations)
 - [References](#references)
 - [License](#license)
 
+## Iteration Roadmap
+
+Iteration Roadmap
+
+| Version | Status | Pipeline Requirements | Reference |
+|---|---|---|---|
+| **v1.3.0 STATIC** | Current | Octave -> C++ (LUT) -> Tests -> Report | [Independent Datasheets](https://database.tytorobotics.com/tests/7xzn/brother-hobby-1404-4600kv) |
+| **v2.0.0 DYNAMIC** | Planned | Rotor inertia + back-EMF dynamics | Oscilloscope + test bench |
+| **v3.0.0 HIL** | Future | Eddy currents + thermal drift + commutation noise | Hardware-in-the-Loop |
+
 ## Motivation
 
-This project models the thrust and current output of the **BrotherHobby 1404 KV4600** brushless motor with an **iFlight Nazgul T4030** propeller as a function of throttle position and battery voltage.
+This project models the thrust and current of the **BrotherHobby 1404** motor. Unlike manufacturer data, which is often "marketing-grade" (optimized for peak freestyle thrust), this model is designed for high accuracy in the **hover and cruise ranges** (20–60% throttle), making it suitable for control system engineering.
 
 ## Project Documentation
 
@@ -48,19 +68,17 @@ This project models the thrust and current output of the **BrotherHobby 1404 KV4
 | [VALIDATION REPORT](./VALIDATION.md) | Validation results and performance metrics |
 
 
-## Environment & Toolchain (Reproducibility)
-
-**Used System:** macOS Tahoe 26.4.1 on Apple Silicon
-Scripts and tests in this project can be reproduced with the following tools:
+## Environment & Toolchain
+**Host:** macOS (Apple Silicon)
+The following tools are required for reproducibility:
 
 | Tool | Version | Purpose |
 | ------ | --------- | --------- |
-| **GNU Octave** | 11.1.0 | Mathematical modeling, generation LUT, Reports|
-| **GCC Clang** | 21.0.0 | Runtime model implementation |
-| **GCC arm-none-eabi-gcc** | 15.2.rel1 | Bare-metal target compilation|
-| **Renode** | 1.16.1.16858 | Instruction-accurate hardware emulation |
+| **GNU Octave** | 11.1.0 | Math modeling, LUT generation, Automated Reporting |
+| **Clang** | 21.0.0 | Runtime model implementation (POSIX) |
+| **arm-none-eabi-gcc**| 15.2.rel1 | Bare-metal target compilation (STM32) |
+| **Renode** | 1.16.1 | Instruction-accurate hardware emulation |
 | **CMake** | 4.3.1 | Build system management |
-| **Bash** | 5.3.9(1) | Scripting and automation |
 
 
 ## Pipeline Overview
@@ -123,7 +141,7 @@ Scripts and tests in this project can be reproduced with the following tools:
 ├── VALIDATION.md
 ├── METRICS.md
 ├── LICENSE
-├── ltspice/ /* muffler */
+├── ltspice/ /* LTSpice simulations for back-EMF and transient analysis */
 ├── octave/ /* Octave scripts for calculations */
 ├── references/ /* Reference materials, datasheets, papers */
 ├── src/ /* Source code */  
@@ -134,7 +152,9 @@ Scripts and tests in this project can be reproduced with the following tools:
 ├── logs/ /* Logs */
 ```
 
-## Octave Workflow
+## Workflows
+
+### Octave Workflow
 
 1. **Load CSV** from `references/Brother-Hobby-1404-4600KV_Propeller-T4030.csv`
 2. **Filter noisy data:** exclude points with RPM < 2000 (idle and near-stall)
@@ -150,24 +170,18 @@ Scripts and tests in this project can be reproduced with the following tools:
 
 Full algorithm description: [CALC.md](./CALC.md)
 
-## Code Workflow
+### Code Workflow
 
 1. **Import LUT:** Include `src/includes/motor_lut.h` in `src/core/motor.cpp`
 2. **Implement Algorithm:** in `src/core/motor.cpp` both for POSIX and STM32 platforms
 
-## Renode Workflow
+### Renode Workflow
 
 1. **Set up Environment:** `renode/test_run.resc` — define the test bench, load the model firmware, set up peripherals
 2. **Logs:** `./start.sh` — execute the renode command with logs parameters
 3. **Logs Output:** `./logs`
 
-## Build & Test
-
-1. **Build:** `./start.sh` — Fully pipeline automation: builds the model firmware, runs Renode tests, exports logs, and generates validation reports.
-2. **Test:** `./start.sh` — Executes the Renode test bench, POSIX unit tests, and generates validation reports.
-3. **Test's Reports:**  in `./logs` as `logs/motor_test_posix.log` and `logs/motor_test_stm32.log`
-
-## Validation Workflow, Results
+## Validation
 
 ### Thrust Tests
 
